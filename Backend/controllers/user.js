@@ -1,7 +1,7 @@
 const user = require('../models/user')
 const bcrypt = require('bcryptjs')
 const {generateAccessToken, generateRefreshToken, getUser} = require('../service/auth')
-const JWT_SECRET = '$rrr%';  
+const JWT_SECRET = process.env.JWT_SECRET;  
 
 async function handleUserSignUp(req, res) {
     const { name, email, mobile, password } = req.body;
@@ -130,14 +130,14 @@ async function handleForgotPassword(req, res) {
       const transporter = nodemailer.createTransport({
         service: 'Gmail',
         auth: {
-          user: 'a32584663@gmail.com',  
-          pass: 'nhgm oewb whjg buzm',   
+          user: process.env.USER_MAIL,  
+          pass: process.env.USER_PASSWORD,   
         },
       });
   
       const mailOptions = {
         to: user1.email,
-        from: 'a32584663@gmail.com',
+        from: process.env.USER_MAIL,
         subject: 'Password Reset',
         html: `<p>You requested a password reset. Click <a href="http://localhost:4200/resetPassword?token=${resetToken}">here</a> to reset your password.</p>`,
       };
