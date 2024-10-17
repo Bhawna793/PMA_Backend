@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const secret = "abc@123";
+const secret = process.env.Secret;
 
 function generateAccessToken(user) {
     const payload = {
