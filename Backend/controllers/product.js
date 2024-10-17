@@ -47,6 +47,19 @@ async function getProduct(req,res){
     }
 }
 
+async function getProductsByUser(req, res) {
+    try {
+        const accessToken = req.cookies?.accessToken;
+        const data = getUser(accessToken);
+        const userId = data.curUser._id;
+        const product = await products.find({createdBy: userId});
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while fetching products'});
+        console.log(error);
+    }
+}
+
 module.exports={
     uploadProducts,
     getProduct,
