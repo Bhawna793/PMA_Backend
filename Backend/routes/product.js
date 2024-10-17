@@ -1,7 +1,7 @@
 const express=require('express');
 const router=express.Router();
 const multer=require('multer');
-const { uploadProducts,getProduct} =require('../controllers/product');
+const { uploadProducts,getProduct, getProductsByUser} =require('../controllers/product');
 
 
 const storage = multer.diskStorage({
