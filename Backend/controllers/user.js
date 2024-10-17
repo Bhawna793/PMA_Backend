@@ -91,7 +91,7 @@ async function handleUserLogout(req, res, next) {
 
 async function refreshAccessToken(req, res) {
     console.log("request for new Access Token");
-    const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+    const incomingRefreshToken = req.cookies?.refreshToken;
     console.log(incomingRefreshToken);
     if(!incomingRefreshToken) {
         return res.status(400).json({msg: "You are not loggedIn"});
