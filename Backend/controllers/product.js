@@ -63,4 +63,5 @@ async function getProductsByUser(req, res) {
 module.exports={
     uploadProducts,
     getProduct,
+    getProductsByUser,
 }
