@@ -3,18 +3,38 @@ const bcrypt = require('bcryptjs')
 const {generateAccessToken, generateRefreshToken, getUser} = require('../service/auth')
 const JWT_SECRET = process.env.JWT_SECRET;  
 
+
 async function handleUserSignUp(req, res) {
     const { name, email, mobile, password } = req.body;
 
-    await user.create({
-        name,
-        email,
-        mobile,
-        password
-    })
+    try {
+        const existingUser = await user.findOne({ email }) || await user.findOne({ mobile });
+        if (existingUser) {
+            return res.status(400).json({ msg: "User already exists" });
+        }
 
-    return res.json({msg:"user Created"});
+        const passwordValidationRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+        if (!passwordValidationRegex.test(password)) {
+            return res.status(400).json({ 
+                msg: "Invalid Password"
+            });
+        }
+
+        const newUser = await user.create({
+            name,
+            email,
+            mobile,
+            password,
+        });
+
+        return res.json({ msg: "User created", user: newUser });
+    } catch (error) {
+        console.error("Error signing up user:", error);
+        return res.status(500).json({ msg: "Internal server error" });
+    }
 }
+
 
 async function handleUserLogin(req, res, next) {
     try {

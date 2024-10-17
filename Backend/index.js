@@ -39,6 +39,7 @@ async function addSubcategoryToCategory(categoryName, subcategoryName) {
             await category.save();
             console.log('Category created with subcategory:', categoryName, subcategoryName);
         } else {
+            let existingCategory=await Category.findOne({})
             if (!category.subcategories.includes(subcategoryName)) {
                 category.subcategories.push(subcategoryName);
                 await category.save();
@@ -50,17 +51,10 @@ async function addSubcategoryToCategory(categoryName, subcategoryName) {
 }
 
 async function add_data(){
-await addSubcategoryToCategory('Electronics', 'Mobile Phones'); 
-await addSubcategoryToCategory('Electronics','Laptops');
-await addSubcategoryToCategory('Electronics','Smart Watch')
-await addSubcategoryToCategory('Electronics','TV')
+
 }
 
 add_data()
-
-
-
-
 
 
 app.use('/user',UserRoute);
