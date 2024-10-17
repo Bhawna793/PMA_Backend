@@ -1,9 +1,7 @@
 const express=require('express');
 const router=express.Router();
 const multer=require('multer');
-const path=require('path')
 const { uploadProducts,getProduct} =require('../controllers/product');
-const products=require('../models/products')
 
 
 const storage = multer.diskStorage({
@@ -21,4 +19,6 @@ router.post("/products", upload.fields([{ name: 'coverImage', maxCount: 1 }, { n
 
 router.get("/products",getProduct);
 
-  module.exports=router;
+router.get("/myProducts", getProductsByUser)
+
+module.exports=router;
