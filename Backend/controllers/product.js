@@ -106,8 +106,30 @@ async function getProductsByUser(req, res) {
     }
 }
 
+async function deleteProduct(req, res) {
+    try {
+        const id = req.params.id;
+        const product = await products.findByIdAndDelete(id);
+
+        if(!product) {
+            return res.status(404).json({msg : "Product not found"});
+        }
+        return res.status(200).json({msg : "Product deleted successfully"});
+    }
+    catch(error) {
+        return res.status(500).json({msg : "Error deleting Product"})
+    }
+}
+
+async function updateProduct(req, res) {
+
+}
+
+
 module.exports={
     uploadProducts,
     getProduct,
     getProductsByUser,
+    deleteProduct,
+    updateProduct,
 }

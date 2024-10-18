@@ -1,8 +1,8 @@
 const express=require('express');
 const router=express.Router();
 const multer=require('multer');
-const { uploadProducts,getProduct, getProductsByUser} =require('../controllers/product');
-
+const { uploadProducts,getProduct, getProductsByUser, deleteProduct} =require('../controllers/product');
+const { checkAuth } = require('../middlewares/auth');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -15,10 +15,12 @@ const storage = multer.diskStorage({
   
   const upload = multer({ storage: storage })
 
-router.post("/products", upload.fields([{ name: 'coverImage', maxCount: 1 }, { name: 'images', maxCount: 10 }]),uploadProducts)
+router.post("/products", checkAuth, upload.fields([{ name: 'coverImage', maxCount: 1 }, { name: 'images', maxCount: 10 }]), uploadProducts)
 
-router.get("/products",getProduct);
+router.get("/products", getProduct);
 
-router.get("/myProducts", getProductsByUser)
+router.get("/myProducts", checkAuth, getProductsByUser)
+
+router.delete("/myProducts/:id", checkAuth, deleteProduct)
 
 module.exports=router;

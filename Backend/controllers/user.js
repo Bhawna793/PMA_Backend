@@ -204,7 +204,7 @@ async function handleChangePassword(req, res, next) {
         return res.json({msg: "Password changed successfully!"});
 
     }catch(error) {
-        next(error);
+        res.status(500).send({msg : "Something went wrong"});
     }
 }
 
