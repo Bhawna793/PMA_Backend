@@ -24,9 +24,6 @@ const userSchema=mongoose.Schema({
         type:String,
         default:"active"
     },
-    refreshToken: {
-        type: String,
-    },
     resetToken:{
         type:String,
     }

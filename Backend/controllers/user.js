@@ -53,7 +53,7 @@ async function handleUserSignUp(req, res) {
 async function handleUserLogin(req, res, next) {
     try {
         const {email, password} = req.body;
-        let curUser = await user.findOne({email});
+        const curUser = await user.findOne({email});
         if(!curUser) {
             return res.status(400).json({msg: "Invalid Email"});
         }
@@ -67,8 +67,6 @@ async function handleUserLogin(req, res, next) {
 
         const accessToken = generateAccessToken(curUser);
         const refreshToken = generateRefreshToken(curUser);
-        curUser.refreshToken = refreshToken;
-        curUser.save();
 
         const options = {
             httpOnly: true,
@@ -87,13 +85,6 @@ async function handleUserLogin(req, res, next) {
 
 async function handleUserLogout(req, res, next) {
     try {
-        const newUser = await user.findByIdAndUpdate(
-            req.user._id,
-            {
-                $set: { refreshToken: "" } 
-            },
-            { new: true } 
-        );
         res.clearCookie('accessToken', SameSite='None');
         res.clearCookie('refreshToken', SameSite='None');
         return res.json({msg : "logout successful"});
@@ -104,35 +95,20 @@ async function handleUserLogout(req, res, next) {
 }
 
 async function refreshAccessToken(req, res) {
-    console.log("request for new Access Token");
     const incomingRefreshToken = req.cookies?.refreshToken;
-    console.log(incomingRefreshToken);
     if(!incomingRefreshToken) {
-        return res.status(400).json({msg: "You are not loggedIn"});
+        return res.status(403).json({msg: "You are not loggedIn"});
     }
 
     const userId = getUser(incomingRefreshToken)._id;
-    console.log("userId: ", userId);
     const curUser = await user.findById(userId);
-    console.log("cur user", curUser);
 
     if(!curUser) {
         return res.status(400).json({msg: "You was logged out! Login Again"});
     }
 
-    if(curUser.refreshToken !== incomingRefreshToken) {
-        console.log(curUser);
-        console.log(curUser.refreshToken);
-        console.log(incomingRefreshToken);
-        return res.status(400).json({msg: "You was logged out! Login Again."});
-    }
-
     const accessToken = generateAccessToken(curUser);
     const refreshToken = generateRefreshToken(curUser);
-    curUser.refreshToken = refreshToken;
-    curUser.save();
-
-    console.log("tokens updated");
 
     const options = {
         httpOnly: true,
@@ -207,15 +183,10 @@ async function handleResetPassword(req, res) {
 async function handleChangePassword(req, res, next) {
     try {
         const {oldPassword, newPassword, confirmPassword} = req.body;
-        const accessToken = req.cookies?.accessToken;
-        console.log("access Token: ", accessToken);
-        let data = getUser(accessToken);
-        const _id = data.curUser._id;
-        console.log(_id);
+        const _id = req.user._id;
         const curUser = await user.findOne({_id});
-        console.log(curUser);
         if(!curUser) {
-            return res.status(400).json({msg: "You are not loggedIn!"});
+            return res.status(400).json({msg: "You are not Authorized"});
         }
 
         const result = await bcrypt.compare(oldPassword, curUser.password);
