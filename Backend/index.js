@@ -1,10 +1,11 @@
 require('dotenv').config()
+const JWT_SECRET = process.env.JWT_SECRET;
+const jwt = require("jsonwebtoken");
 
 const express = require('express');
 const app = express();
 const PORT = 8000;
 const cors = require('cors');
-const nodemailer=require('nodemailer')
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const mongoose=require('mongoose');
@@ -13,7 +14,6 @@ const Category=require('./models/categories')
 const products=require('./models/products');
 const UserRoute=require('./routes/user')
 const ProductRoute=require('./routes/product');
-const jwt=require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
 const path=require('path')
 const categoriesController=require('./routes/category');
@@ -86,8 +86,34 @@ async function add_data(){
 
 add_data();
 
+app.post('/api/verify-email', async (req, res) => {
+    const { token } = req.body;
+  console.log(req.body);
+    try {
+        
+      const decoded = jwt.verify(token, JWT_SECRET);
+      console.log("decoded",decoded);
+      const email = decoded.email;
+      console.log("email",email);
 
+      const user1 = await user.findOne({ email, verificationToken: token });
 
+      console.log("user found")
+  
+      if (!user1) {
+        return res.status(400).json({ message: 'Invalid token or user' });
+      }
+  
+      user1.isVerified = true;
+      user1.verificationToken = null; 
+      await user1.save();
+  
+      res.status(200).json({ message: 'Email verified successfully' });
+    } catch (error) {
+      res.status(400).json({ message: 'Token verification failed', error });
+    }
+  });
+  
 
 app.use('/user',UserRoute);
 app.use('/api',ProductRoute);
