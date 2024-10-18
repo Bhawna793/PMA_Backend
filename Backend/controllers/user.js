@@ -14,10 +14,24 @@ async function handleUserSignUp(req, res) {
         }
 
         const passwordValidationRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const nameValidationRegex=/^[a-zA-Zs]+$/;
+        const mobileValidationRegex=/[6-9][0-9]{9}$/;
 
         if (!passwordValidationRegex.test(password)) {
             return res.status(400).json({ 
                 msg: "Invalid Password"
+            });
+        }
+
+        if (!nameValidationRegex.test(name)) {
+            return res.status(400).json({ 
+                msg: "Invalid Name"
+            });
+        }
+
+        if (!mobileValidationRegex.test(mobile)) {
+            return res.status(400).json({ 
+                msg: "Invalid Mobile number"
             });
         }
 

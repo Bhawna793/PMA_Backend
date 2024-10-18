@@ -49,13 +49,44 @@ async function addSubcategoryToCategory(categoryName, subcategoryName) {
     }
 }
 
-// await add_data(){
+async function add_data(){
+   await addSubcategoryToCategory('Electronics','Mobile');
+   await addSubcategoryToCategory('Electronics','Laptop');
+   await addSubcategoryToCategory('Electronics','Tablets');
+   await addSubcategoryToCategory('Electronics','Smart Watch');
 
-// }
 
-// add_data(){
+   await addSubcategoryToCategory('Books','Fiction');
+   await addSubcategoryToCategory('Books','Non-Fiction');
+   await addSubcategoryToCategory('Books','Kids Supplies');
+   await addSubcategoryToCategory('Books','Office Supplies');
 
-// }
+
+   await addSubcategoryToCategory('Foods','Snacks');
+   await addSubcategoryToCategory('Foods','Beverages');
+   await addSubcategoryToCategory('Foods','Fresh Produce');
+   await addSubcategoryToCategory('Foods','Canned Foods');
+
+   await addSubcategoryToCategory('Beauty and Health','Skincare');
+   await addSubcategoryToCategory('Beauty and Health','Haircare');
+   await addSubcategoryToCategory('Beauty and Health','Makeup');
+   await addSubcategoryToCategory('Beauty and Health','Health Supplements');
+
+   await addSubcategoryToCategory('Home and Living','Furniture');
+   await addSubcategoryToCategory('Home and Living','KitchenWare');
+   await addSubcategoryToCategory('Home and Living','Home Decor');
+   await addSubcategoryToCategory('Home and Living','Beddings');
+
+   await addSubcategoryToCategory('Fashion','Mens Wear');
+   await addSubcategoryToCategory('Fashion','Womens Wear');
+   await addSubcategoryToCategory('Fashion','Kids Wear');
+
+
+}
+
+add_data();
+
+
 
 
 app.use('/user',UserRoute);
