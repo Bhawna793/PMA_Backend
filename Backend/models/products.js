@@ -33,16 +33,22 @@ const ProductSchema = mongoose.Schema({
   },
   discount: {
     type: Number,
-    default: 0 
+    default: 0 ,
+    required:true,
   },
   quantity:{
     type:Number,
-    default:1
+    default:1,
+    required:true,
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "users",
-  }
+  },
+  seller:{
+    type:String,
+    ref:"users"
+  },
 });
 
 module.exports = mongoose.model('Product', ProductSchema);

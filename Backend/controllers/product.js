@@ -6,7 +6,52 @@ const {getUser}=require('../service/auth')
 
 async function uploadProducts(req,res){
     try {
-        const currUser=getUser(req.cookies.refreshToken);
+
+        const existingProduct = await products.findOne({ name:req.body.name });
+        if (existingProduct) {
+            console.log("Product already exists")
+            return res.status(400).json({ msg: "Product already exists" });
+        }
+
+        const priceValidationRegex = /^[0-9]{1,10}(\.\d{1,3})?$/;
+        const discountValidationRegex=/^[0-9]{1,10}(\.\d{1,3})?$/;
+        const nameValidationRegex=/^(?=.*[a-zA-Z])(?![0-9]+)[a-zA-Z0-9 ]{1,20}$/;
+        const quantityValidationRegex = /^[1-9][0-9]*$/;
+
+        if (!nameValidationRegex.test(req.body.name)) {
+            console.log("Invalid name")
+            return res.status(400).json({ 
+                msg: "Invalid Name"
+            });
+        }
+
+
+        if (!priceValidationRegex.test(req.body.price)) {
+            console.log("Invalid price")
+            return res.status(400).json({ 
+                msg: "Invalid Price"
+            });
+        }
+
+        if (!discountValidationRegex.test(req.body.discount)) {
+            console.log("Invalid discount")
+            return res.status(400).json({ 
+                msg: "Invalid Discount"
+            });
+        }
+
+        
+        if (!quantityValidationRegex.test(req.body.Quantity)) {
+            console.log("Invalid quantity")
+            return res.status(400).json({ 
+                msg: "Invalid Quantity"
+            });
+        }
+
+
+        const currUser=getUser(req.cookies.accessToken);
+
+        console.log(currUser)
 
         if (!req.files.coverImage || req.files.coverImage.length === 0) {
             return res.status(400).json({ error: 'Cover image is required.' });
@@ -25,9 +70,10 @@ async function uploadProducts(req,res){
             coverImage: coverImagePath,
             images: imagePaths, 
             discount: req.body.discount,
-            createdBy:currUser._id,
+            createdBy:currUser.curUser._id,
+            seller:currUser.curUser.name,
         });
-  
+ 
         await product.save(); 
         res.status(201).json({ message: 'Product created successfully', product });
     } catch (error) {
