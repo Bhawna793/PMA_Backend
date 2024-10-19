@@ -1,7 +1,7 @@
 const express=require('express');
 const router=express.Router();
 const multer=require('multer');
-const { uploadProducts,getProduct, getProductsByUser, deleteProduct} =require('../controllers/product');
+const { uploadProducts,getProduct, getProductsByUser, deleteProduct, updateProduct} =require('../controllers/product');
 const { checkAuth } = require('../middlewares/auth');
 
 const storage = multer.diskStorage({
@@ -22,5 +22,7 @@ router.get("/products", getProduct);
 router.get("/myProducts", checkAuth, getProductsByUser)
 
 router.delete("/myProducts/:id", checkAuth, deleteProduct)
+
+router.patch("/myProducts/:id", checkAuth, updateProduct);
 
 module.exports=router;

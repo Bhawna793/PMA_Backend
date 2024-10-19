@@ -3,55 +3,48 @@ const multer=require('multer');
 const path=require('path')
 const {getUser}=require('../service/auth')
 
+function checkValidation(req) {
+    const priceValidationRegex = /^[0-9]{1,10}(\.\d{1,3})?$/;
+    const discountValidationRegex=/^[0-9]{1,10}(\.\d{1,3})?$/;
+    const nameValidationRegex=/^(?=.*[a-zA-Z])(?![0-9]+)[a-zA-Z0-9 ]{1,20}$/;
+    const quantityValidationRegex = /^[1-9][0-9]*$/;
+
+    if (!nameValidationRegex.test(req.body.name)) {
+        return res.status(400).json({ 
+            msg: "Invalid Name"
+        });
+    }
+
+    if (!priceValidationRegex.test(req.body.price)) {
+        return res.status(400).json({ 
+            msg: "Invalid Price"
+        });
+    }
+
+    if (!discountValidationRegex.test(req.body.discount)) {
+        return res.status(400).json({ 
+            msg: "Invalid Discount"
+        });
+    }
+
+    
+    if (!quantityValidationRegex.test(req.body.Quantity)) {
+        return res.status(400).json({ 
+            msg: "Invalid Quantity"
+        });
+    }
+}
 
 async function uploadProducts(req,res){
     try {
-
         const existingProduct = await products.findOne({ name:req.body.name });
         if (existingProduct) {
-            console.log("Product already exists")
             return res.status(400).json({ msg: "Product already exists" });
         }
 
-        const priceValidationRegex = /^[0-9]{1,10}(\.\d{1,3})?$/;
-        const discountValidationRegex=/^[0-9]{1,10}(\.\d{1,3})?$/;
-        const nameValidationRegex=/^(?=.*[a-zA-Z])(?![0-9]+)[a-zA-Z0-9 ]{1,20}$/;
-        const quantityValidationRegex = /^[1-9][0-9]*$/;
-
-        if (!nameValidationRegex.test(req.body.name)) {
-            console.log("Invalid name")
-            return res.status(400).json({ 
-                msg: "Invalid Name"
-            });
-        }
-
-
-        if (!priceValidationRegex.test(req.body.price)) {
-            console.log("Invalid price")
-            return res.status(400).json({ 
-                msg: "Invalid Price"
-            });
-        }
-
-        if (!discountValidationRegex.test(req.body.discount)) {
-            console.log("Invalid discount")
-            return res.status(400).json({ 
-                msg: "Invalid Discount"
-            });
-        }
-
-        
-        if (!quantityValidationRegex.test(req.body.Quantity)) {
-            console.log("Invalid quantity")
-            return res.status(400).json({ 
-                msg: "Invalid Quantity"
-            });
-        }
-
+        checkValidation(req);
 
         const currUser=getUser(req.cookies.accessToken);
-
-        console.log(currUser)
 
         if (!req.files.coverImage || req.files.coverImage.length === 0) {
             return res.status(400).json({ error: 'Cover image is required.' });
@@ -77,7 +70,6 @@ async function uploadProducts(req,res){
         await product.save(); 
         res.status(201).json({ message: 'Product created successfully', product });
     } catch (error) {
-        console.error('Error during file upload:', error); 
         res.status(500).json({ error: 'An error occurred while creating the product' });
     }
  
@@ -122,7 +114,38 @@ async function deleteProduct(req, res) {
 }
 
 async function updateProduct(req, res) {
+    try {
+        const _id = req.params.id;
+        const existingProduct = await products.findOne({_id});
+        if(!existingProduct) {
+            return res.status(404).json({msg : "Product not found"});
+        }
 
+        checkValidation(req);
+
+        if (!req.files.coverImage || req.files.coverImage.length === 0) {
+            return res.status(400).json({ error: 'Cover image is required.' });
+        }
+
+        const coverImagePath = req.files.coverImage[0].path; 
+        const imagePaths = req.files.images ? req.files.images.map(file => file.path) : [];
+
+        existingProduct.category = req.body.category;
+        existingProduct.subcategory = req.body.subcategory;
+        existingProduct.name = req.body.name;
+        existingProduct.price = req.body.price;
+        existingProduct.discount = req.body.discount;
+        existingProduct.Quantity = req.body.Quantity;
+        existingProduct.description = req.body.description;
+        existingProduct.coverImage = coverImagePath;
+        existingProduct.images = imagePaths;
+
+        await existingProduct.save();
+        return res.status(200).json({msg : "Product updated successfully", product});
+    }
+    catch {
+        return res.status(500).json({msg: "An error occurred while updating the product"});
+    }
 }
 
 
