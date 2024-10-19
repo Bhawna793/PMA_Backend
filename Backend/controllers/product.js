@@ -37,12 +37,11 @@ function checkValidation(req) {
 
 async function uploadProducts(req,res){
     try {
+        checkValidation(req);
         const existingProduct = await products.findOne({ name:req.body.name });
         if (existingProduct) {
             return res.status(400).json({ msg: "Product already exists" });
         }
-
-        checkValidation(req);
 
         const currUser=getUser(req.cookies.accessToken);
 
@@ -87,42 +86,48 @@ async function getProduct(req,res){
 
 async function getProductsByUser(req, res) {
     try {
-        const accessToken = req.cookies?.accessToken;
-        const data = getUser(accessToken);
-        const userId = data.curUser._id;
-        const product = await products.find({createdBy: userId});
+        const userId = req.user._id;
+        const product = await products.find({createdBy: userId, isActive: true});
         res.json(product);
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching products'});
-        console.log(error);
+    }
+}
+
+async function getProductById(req, res) {
+    try {
+        const _id = req.params.id;
+        const product = await products.findOne({_id});
+        if(!product) {
+            return res.status(404).json({msg : "Product not found"});
+        }
+        res.status(200).json(product);
+    }
+    catch(error) {
+        res.status(500).json({msg: 'Something went wrong'});
     }
 }
 
 async function deleteProduct(req, res) {
     try {
-        const id = req.params.id;
-        const product = await products.findByIdAndDelete(id);
-
+        const _id = req.params.id;
+        const curProduct = await products.findOne({_id});
         if(!product) {
             return res.status(404).json({msg : "Product not found"});
         }
-        return res.status(200).json({msg : "Product deleted successfully"});
+        const newProductName = curProduct.name + " " + Date.now();
+        curProduct.isActive = false;
+        curProduct.name = newProductName;
+        res.status(200).json({msg : "Product deleted successfully"});
     }
     catch(error) {
-        return res.status(500).json({msg : "Error deleting Product"})
+        res.status(500).json({msg : "Error deleting Product"})
     }
 }
 
 async function updateProduct(req, res) {
     try {
-        const _id = req.params.id;
-        const existingProduct = await products.findOne({_id});
-        if(!existingProduct) {
-            return res.status(404).json({msg : "Product not found"});
-        }
-
         checkValidation(req);
-
         if (!req.files.coverImage || req.files.coverImage.length === 0) {
             return res.status(400).json({ error: 'Cover image is required.' });
         }
@@ -130,29 +135,35 @@ async function updateProduct(req, res) {
         const coverImagePath = req.files.coverImage[0].path; 
         const imagePaths = req.files.images ? req.files.images.map(file => file.path) : [];
 
-        existingProduct.category = req.body.category;
-        existingProduct.subcategory = req.body.subcategory;
-        existingProduct.name = req.body.name;
-        existingProduct.price = req.body.price;
-        existingProduct.discount = req.body.discount;
-        existingProduct.Quantity = req.body.Quantity;
-        existingProduct.description = req.body.description;
-        existingProduct.coverImage = coverImagePath;
-        existingProduct.images = imagePaths;
+        const id = req.params.id;
 
-        await existingProduct.save();
-        return res.status(200).json({msg : "Product updated successfully", product});
+        const updatedProduct = await products.findByIdAndUpdate({_id: id}, {
+            category: req.body.category,
+            subcategory: req.body.subcategory,
+            name: req.body.name,
+            price: req.body.price,
+            discount: req.body.discount,
+            Quantity: req.body.Quantity,
+            description: req.body.description,
+            coverImage: coverImagePath,
+            images: imagePaths,
+        });
+        if(!updatedProduct) {
+            return res.status(404).json({msg : "Product not found"});
+        }
+
+        res.status(200).json({msg : "Product updated successfully", product});
     }
     catch {
-        return res.status(500).json({msg: "An error occurred while updating the product"});
+        res.status(500).json({msg: "An error occurred while updating the product"});
     }
 }
-
 
 module.exports={
     uploadProducts,
     getProduct,
     getProductsByUser,
+    getProductById,
     deleteProduct,
     updateProduct,
 }

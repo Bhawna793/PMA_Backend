@@ -23,7 +23,6 @@ const ProductSchema = mongoose.Schema({
     type: Number,
     required: true
   },
-  
   coverImage:{
     type:String,
     required:true,
@@ -49,6 +48,10 @@ const ProductSchema = mongoose.Schema({
     type:String,
     ref:"users"
   },
+  isActive: {
+    type: Boolean,
+    default: true,
+  }
 });
 
 module.exports = mongoose.model('Product', ProductSchema);
