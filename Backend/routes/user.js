@@ -1,6 +1,6 @@
 const express=require('express');
 const router=express.Router();
-const {handleUserLogin, handleUserLogout, handleUserSignUp, refreshAccessToken, handleForgotPassword, handleResetPassword, handleChangePassword} = require('../controllers/user');
+const {handleUserLogin, handleUserLogout, handleUserSignUp, refreshAccessToken, handleForgotPassword, handleResetPassword, handleChangePassword,handleVerifyUser} = require('../controllers/user');
 const { checkAuth } = require('../middlewares/auth');
 
 router.post('/signup', handleUserSignUp)
@@ -16,5 +16,6 @@ router.post('/forgotPassword', handleForgotPassword);
 router.post('/resetPassword', handleResetPassword);
 
 router.post('/changePassword', checkAuth, handleChangePassword);
+
 
 module.exports=router;
