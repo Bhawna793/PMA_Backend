@@ -168,81 +168,88 @@ async function refreshAccessToken(req, res) {
 }
 
 async function handleForgotPassword(req, res) {
-    const { email } = req.body;
-  
-    try {
-      const user1 = await user.findOne({ email });
-      if (!user1) {
-        return res.status(404).send({ message: "User not found" });
-      }
-  
-      const resetToken = jwt.sign({ id: user1._id }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
-  
-      user1.resetToken = resetToken;
-      await user1.save();
-  
-      res.cookie('resetToken', resetToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', 
-        sameSite: 'None' 
-      });
-        
-      const transporter = nodemailer.createTransport({
-        service: "Gmail",
-        auth: {
-          user: process.env.USER_MAIL,
-          pass: process.env.USER_PASSWORD,
-        },
-      });
-  
-      const mailOptions = {
-        to: user1.email,
-        from: process.env.USER_MAIL,
-        subject: "Password Reset",
-        html: `<p>You requested a password reset. Click <a href="http://localhost:4200/resetPassword">here</a> to reset your password.</p>`,
-      };
-  
-      await transporter.sendMail(mailOptions);
-  
-      res.send({ message: "Password reset email sent" });
-    } catch (err) {
-      res.status(500).send({ message: "Error sending reset email" });
+  const { email } = req.body;
+  try {
+    if (!email) {
+      return res.status(403).json({ msg: "Please fill your email" });
     }
+
+    const user1 = await user.findOne({ email });
+    if (!user1) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    console.log("user1", user1);
+    const resetToken = jwt.sign({ id: user1._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    user1.resetToken = resetToken;
+    await user1.save();
+
+    res.cookie("resetToken", resetToken, (SameSite = "None"), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    console.log("token generated");
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.USER_MAIL,
+        pass: process.env.USER_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      to: user1.email,
+      from: process.env.USER_MAIL,
+      subject: "Password Reset",
+      html: `<p>You requested a password reset. Click <a href="http://localhost:4200/resetPassword">here</a> to reset your password.</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.send({ message: "Password reset email sent" });
+  } catch (err) {
+    res
+      .status(500)
+      .send({ message: "Error sending reset email", error: err.message });
   }
-  
+}
 
 async function handleResetPassword(req, res) {
-    const { password } = req.body;
-    const resetToken1 = req.cookies?.resetToken; 
+  const { password } = req.body;
+  if (!password) {
+    return res.status(403).json({ msg: "Please fill password" });
+  }
+  const resetToken1 = req.cookies?.resetToken;
+  if (!resetToken1) {
+    return res.status(400).send({ message: "Reset token missing" });
+  }
 
-    console.log(resetToken1)
-  
-    if (!resetToken1) {
-      return res.status(400).send({ message: "Reset token missing" });
+  try {
+    const decoded = jwt.verify(resetToken1, process.env.JWT_SECRET);
+
+    const user1 = await user.findById(decoded.id);
+    if (!user1 || user1.resetToken !== resetToken1) {
+      return res.status(400).send({ message: "Invalid or expired token" });
     }
-  
-    try {
-      const decoded = jwt.verify(resetToken1, process.env.JWT_SECRET);
-      const user1 = await user.findById(decoded.id);
-        console.log(decoded);
 
-      if (!user1 || user1.resetToken !== resetToken1) {
-        return res.status(400).send({ message: "Invalid or expired token" });
-      }
+    user1.password = password;
 
-      console.log("Password Reset")
-  
-      user1.password = password;
-      user1.resetToken = null; 
-      await user1.save();
-  
-      res.send({ message: "Password reset successfully" });
-    } catch (error) {
-      res.status(500).send({ message: "Error resetting password", error });
+    user1.resetToken = null;
+    await user1.save();
+    res.clearCookie("resetToken");
+
+    res.send({ message: "Password reset successfully" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(400).send({ message: "Token expired" });
     }
-  
+    console.log("oh");
+    res
+      .status(500)
+      .send({ message: "Error resetting password", error: error.message });
+  }
 }
 
 async function handleChangePassword(req, res, next) {
@@ -269,7 +276,7 @@ async function handleChangePassword(req, res, next) {
     return res.json({ msg: "Password changed successfully!" });
   } catch (error) {
     res.status(500).send({ message: "Error resetting password", error });
-}
+  }
 }
 
 module.exports = {
