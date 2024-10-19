@@ -17,12 +17,7 @@ async function handleUserSignUp(req, res) {
       return res.status(403).json({ msg: "Please fill your credentials" });
     }
 
-    const existingUser =
-      (await user.findOne({ email })) || (await user.findOne({ mobile }));
-    if (existingUser) {
-      return res.status(400).json({ msg: "User already exists" });
-    }
-
+   
     const passwordValidationRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     const nameValidationRegex = /^[a-zA-Zs]+$/;
@@ -49,6 +44,13 @@ async function handleUserSignUp(req, res) {
       });
     }
 
+    const existingUser = await user.findOne({
+      $or: [{ email }, { mobile }]
+      });
+    if (existingUser) {
+      return res.status(400).json({ msg: "User already exists" });
+    }
+
     const newUser = await user.create({
       name,
       email,
@@ -59,9 +61,9 @@ async function handleUserSignUp(req, res) {
     });
 
     handleVerifyUser(email, newUser.verificationToken);
-    return res.json({ msg: "User created", user: newUser });
+     res.json({ msg: "User created", user: newUser });
   } catch (error) {
-    return res.status(500).json({ msg: "Internal server error" });
+    res.status(500).json({ msg: "Internal server error" });
   }
 }
 
@@ -84,7 +86,6 @@ async function handleVerifyUser(email, token) {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log("Email sent");
   } catch (err) {
     console.log("Email not sent");
   }
@@ -174,16 +175,20 @@ async function handleForgotPassword(req, res) {
       return res.status(403).json({ msg: "Please fill your email" });
     }
 
-    const user1 = await user.findOne({ email });
-    if (!user1) {
-      return res.status(404).send({ message: "User not found" });
-    }
-    console.log("user1", user1);
     const resetToken = jwt.sign({ id: user1._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-
-    user1.resetToken = resetToken;
+    
+    const user1 = await user.findOneAndUpdate(
+      { email },
+      { resetToken }, 
+      { new: true }   
+    );
+    
+    if (!user1) {
+      return res.status(404).send({ message: "User not found" });
+    }
+        
     await user1.save();
 
     res.cookie("resetToken", resetToken, (SameSite = "None"), {
@@ -191,7 +196,6 @@ async function handleForgotPassword(req, res) {
       secure: process.env.NODE_ENV === "production",
     });
 
-    console.log("token generated");
     const transporter = nodemailer.createTransport({
       service: "Gmail",
       auth: {

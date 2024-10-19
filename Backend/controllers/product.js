@@ -14,13 +14,11 @@ async function uploadProducts(req, res) {
       !req.body.discount ||
       !req.body.Quantity 
     ) {
-        console.log(req.body)
       return res.status(403).json({msg:"Please fill your Credentials"});
     }
 
     const existingProduct = await products.findOne({ name: req.body.name });
     if (existingProduct) {
-      console.log("Product already exists");
       return res.status(400).json({ msg: "Product already exists" });
     }
 
@@ -30,28 +28,24 @@ async function uploadProducts(req, res) {
     const quantityValidationRegex = /^[1-9][0-9]*$/;
 
     if (!nameValidationRegex.test(req.body.name)) {
-      console.log("Invalid name");
       return res.status(400).json({
         msg: "Invalid Name",
       });
     }
 
     if (!priceValidationRegex.test(req.body.price)) {
-      console.log("Invalid price");
       return res.status(400).json({
         msg: "Invalid Price",
       });
     }
 
     if (!discountValidationRegex.test(req.body.discount)) {
-      console.log("Invalid discount");
       return res.status(400).json({
         msg: "Invalid Discount",
       });
     }
 
     if (!quantityValidationRegex.test(req.body.Quantity)) {
-      console.log("Invalid quantity");
       return res.status(400).json({
         msg: "Invalid Quantity",
       });
@@ -59,7 +53,6 @@ async function uploadProducts(req, res) {
 
     const currUser = getUser(req.cookies.accessToken);
 
-    console.log(currUser);
 
     if (!req.files.coverImage || req.files.coverImage.length === 0) {
       return res.status(400).json({ error: "Cover image is required." });
@@ -87,7 +80,6 @@ async function uploadProducts(req, res) {
     await product.save();
     res.status(201).json({ message: "Product created successfully", product });
   } catch (error) {
-    console.error("Error during file upload:", error);
     res
       .status(500)
       .json({ error: "An error occurred while creating the product" });
@@ -102,7 +94,6 @@ async function getProduct(req, res) {
     res
       .status(500)
       .json({ error: "An error occurred while fetching products" });
-    console.log(error);
   }
 }
 
@@ -117,7 +108,6 @@ async function getProductsByUser(req, res) {
     res
       .status(500)
       .json({ error: "An error occurred while fetching products" });
-    console.log(error);
   }
 }
 
