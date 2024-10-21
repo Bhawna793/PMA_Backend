@@ -12,9 +12,9 @@ async function uploadProducts(req, res) {
       !req.body.category ||
       !req.body.subcategory ||
       !req.body.discount ||
-      !req.body.Quantity 
+      !req.body.Quantity
     ) {
-      return res.status(403).json({msg:"Please fill your Credentials"});
+      return res.status(403).json({ msg: "Please fill your Credentials" });
     }
 
     const existingProduct = await products.findOne({ name: req.body.name });
@@ -52,7 +52,6 @@ async function uploadProducts(req, res) {
     }
 
     const currUser = getUser(req.cookies.accessToken);
-
 
     if (!req.files.coverImage || req.files.coverImage.length === 0) {
       return res.status(400).json({ error: "Cover image is required." });

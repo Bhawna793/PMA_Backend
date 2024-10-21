@@ -17,7 +17,6 @@ async function handleUserSignUp(req, res) {
       return res.status(403).json({ msg: "Please fill your credentials" });
     }
 
-   
     const passwordValidationRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     const nameValidationRegex = /^[a-zA-Zs]+$/;
@@ -45,8 +44,8 @@ async function handleUserSignUp(req, res) {
     }
 
     const existingUser = await user.findOne({
-      $or: [{ email }, { mobile }]
-      });
+      $or: [{ email }, { mobile }],
+    });
     if (existingUser) {
       return res.status(400).json({ msg: "User already exists" });
     }
@@ -61,7 +60,7 @@ async function handleUserSignUp(req, res) {
     });
 
     handleVerifyUser(email, newUser.verificationToken);
-     res.json({ msg: "User created", user: newUser });
+    res.json({ msg: "User created", user: newUser });
   } catch (error) {
     res.status(500).json({ msg: "Internal server error" });
   }
@@ -88,6 +87,29 @@ async function handleVerifyUser(email, token) {
     await transporter.sendMail(mailOptions);
   } catch (err) {
     console.log("Email not sent");
+  }
+}
+
+async function verify_user(req, res) {
+  const { token } = req.body;
+  console.log(req.body);
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const email = decoded.email;
+
+    const user1 = await user.findOne({ email, verificationToken: token });
+
+    if (!user1) {
+      return res.status(400).json({ message: "Invalid token or user" });
+    }
+
+    user1.isVerified = true;
+    user1.verificationToken = null;
+    await user1.save();
+
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    res.status(400).json({ message: "Token verification failed", error });
   }
 }
 
@@ -178,17 +200,17 @@ async function handleForgotPassword(req, res) {
     const resetToken = jwt.sign({ id: user1._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    
+
     const user1 = await user.findOneAndUpdate(
       { email },
-      { resetToken }, 
-      { new: true }   
+      { resetToken },
+      { new: true }
     );
-    
+
     if (!user1) {
       return res.status(404).send({ message: "User not found" });
     }
-        
+
     await user1.save();
 
     res.cookie("resetToken", resetToken, (SameSite = "None"), {
@@ -292,4 +314,5 @@ module.exports = {
   handleResetPassword,
   handleChangePassword,
   handleVerifyUser,
+  verify_user,
 };
