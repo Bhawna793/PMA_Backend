@@ -25,6 +25,6 @@ router.get("/myProducts/:id", checkAuth, getProductById);
 
 router.delete("/myProducts/:id", checkAuth, deleteProduct)
 
-router.patch("/myProducts/:id", checkAuth, updateProduct);
+router.patch("/myProducts/:id", checkAuth, upload.fields([{ name: 'coverImage', maxCount: 1 }, { name: 'images', maxCount: 10 }]), updateProduct);
 
 module.exports=router;
