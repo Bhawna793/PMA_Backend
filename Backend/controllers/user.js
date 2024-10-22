@@ -19,7 +19,7 @@ async function handleUserSignUp(req, res) {
 
     const passwordValidationRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    const nameValidationRegex = /^[a-zA-Zs]+$/;
+    const nameValidationRegex = /^[a-zA-Z\s]+$/;
     const mobileValidationRegex = /[6-9][0-9]{9}$/;
 
     if (!passwordValidationRegex.test(password)) {
@@ -82,13 +82,12 @@ async function handleVerifyUser(email, token) {
 
     await transporter.sendMail(mailOptions);
   } catch (err) {
-    console.log("Email not sent");
+    res.status(401).json({ msg: "Email not sent" });
   }
 }
 
 async function verify_user(req, res) {
   const { token } = req.body;
-  console.log(req.body);
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     const email = decoded.email;
@@ -196,20 +195,16 @@ async function handleForgotPassword(req, res) {
     if (!email) {
       return res.status(403).json({ msg: "Please fill your email" });
     }
+    const user1 = await user.findOne({ email });
+    if (!user1) {
+      return res.status(404).send({ message: "User not found" });
+    }
 
     const resetToken = jwt.sign({ id: user1._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
-    const user1 = await user.findOneAndUpdate(
-      { email },
-      { resetToken },
-      { new: true }
-    );
-
-    if (!user1) {
-      return res.status(404).send({ message: "User not found" });
-    }
+    user1.resetToken = resetToken;
 
     await user1.save();
 

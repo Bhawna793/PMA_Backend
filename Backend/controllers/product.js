@@ -4,8 +4,8 @@ const path = require("path");
 const { getUser } = require("../service/auth");
 
 function checkValidation(req) {
-  const priceValidationRegex = /^[0-9]{1,10}(\.\d{1,3})?$/;
-  const discountValidationRegex = /^[0-9]{1,10}(\.\d{1,3})?$/;
+  const priceValidationRegex = /^[1-9][0-9]*$/;
+  const discountValidationRegex = /^[0-9]+$/;
   const nameValidationRegex = /^(?=.*[a-zA-Z])(?![0-9]+)[a-zA-Z0-9 ]{1,20}$/;
   const quantityValidationRegex = /^[1-9][0-9]*$/;
 
@@ -14,14 +14,12 @@ function checkValidation(req) {
       msg: "Invalid Name",
     });
   }
-   
 
   if (!priceValidationRegex.test(req.body.price)) {
     return res.status(400).json({
       msg: "Invalid Price",
     });
   }
-    
 
   if (!discountValidationRegex.test(req.body.discount)) {
     return res.status(400).json({
@@ -35,7 +33,6 @@ function checkValidation(req) {
     });
   }
 }
-
 
 async function uploadProducts(req, res) {
   try {
@@ -60,10 +57,10 @@ async function uploadProducts(req, res) {
     const currUser = getUser(req.cookies.accessToken);
 
     if (!req.files.coverImage || req.files.coverImage.length === 0) {
-      return res.status(400).json({ error: "Cover image is required." });
+      return res.status(400).json({ msg: "Cover image is required." });
     }
     if (!req.files.coverImage || req.files.coverImage.length === 0) {
-      return res.status(400).json({ error: "Cover image is required." });
+      return res.status(400).json({ msg: "Cover image is required." });
     }
 
     const coverImagePath = req.files.coverImage[0].path;
@@ -86,18 +83,17 @@ async function uploadProducts(req, res) {
     });
 
     await product.save();
-    res.status(201).json({ message: "Product created successfully", product });
+    res.status(201).json({ msg: "Product created successfully", product });
   } catch (error) {
     res
       .status(500)
-      .json({ error: "An error occurred while creating the product" });
+      .json({ msg: "An error occurred while creating the product" });
   }
 }
-   
 
 async function getProduct(req, res) {
   try {
-    const product = await products.find();
+    const product = await products.find({ isActive: true });
     res.json(product);
   } catch (error) {
     res
@@ -195,4 +191,3 @@ module.exports = {
   deleteProduct,
   updateProduct,
 };
-
