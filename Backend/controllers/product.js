@@ -97,7 +97,7 @@ async function uploadProducts(req, res) {
 
 async function getProduct(req, res) {
   try {
-    const product = await products.find();
+    const product = await products.find({isActive: true });
     res.json(product);
   } catch (error) {
     res
