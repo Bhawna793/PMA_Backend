@@ -5,7 +5,11 @@ const {
   uploadProducts,
   getProduct,
   getProductsByUser,
+  getProductById,
+  deleteProduct,
+  updateProduct,
 } = require("../controllers/product");
+const { checkAuth } = require("../middlewares/auth");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -20,6 +24,7 @@ const upload = multer({ storage: storage });
 
 router.post(
   "/products",
+  checkAuth,
   upload.fields([
     { name: "coverImage", maxCount: 1 },
     { name: "images", maxCount: 10 },
@@ -29,6 +34,20 @@ router.post(
 
 router.get("/products", getProduct);
 
-router.get("/myProducts", getProductsByUser);
+router.get("/myProducts", checkAuth, getProductsByUser);
+
+router.get("/myProducts/:id", checkAuth, getProductById);
+
+router.delete("/myProducts/:id", checkAuth, deleteProduct);
+
+router.patch(
+  "/myProducts/:id",
+  checkAuth,
+  upload.fields([
+    { name: "coverImage", maxCount: 1 },
+    { name: "images", maxCount: 10 },
+  ]),
+  updateProduct
+);
 
 module.exports = router;

@@ -5,6 +5,7 @@ const {
   generateRefreshToken,
   getUser,
 } = require("../service/auth");
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -12,7 +13,6 @@ const nodemailer = require("nodemailer");
 async function handleUserSignUp(req, res) {
   try {
     const { name, email, mobile, password } = req.body;
-
     if (!email || !name || !mobile || !password) {
       return res.status(403).json({ msg: "Please fill your credentials" });
     }
@@ -23,21 +23,18 @@ async function handleUserSignUp(req, res) {
     const mobileValidationRegex = /[6-9][0-9]{9}$/;
 
     if (!passwordValidationRegex.test(password)) {
-      console.log("Invalid Password");
       return res.status(400).json({
         msg: "Invalid Password",
       });
     }
 
     if (!nameValidationRegex.test(name)) {
-      console.log("Invalid name");
       return res.status(400).json({
         msg: "Invalid Name",
       });
     }
 
     if (!mobileValidationRegex.test(mobile)) {
-      console.log("Invalid mobile");
       return res.status(400).json({
         msg: "Invalid Mobile number",
       });
@@ -58,11 +55,10 @@ async function handleUserSignUp(req, res) {
       isVerfied: false,
       verificationToken: jwt.sign({ email }, JWT_SECRET, { expiresIn: "1h" }),
     });
-
     handleVerifyUser(email, newUser.verificationToken);
-    res.json({ msg: "User created", user: newUser });
+    return res.json({ msg: "User created", user: newUser });
   } catch (error) {
-    res.status(500).json({ msg: "Internal server error" });
+    return res.status(500).json({ msg: "Internal server error" });
   }
 }
 
@@ -147,9 +143,9 @@ async function handleUserLogin(req, res, next) {
     res
       .cookie("accessToken", accessToken, (SameSite = "None"), options)
       .cookie("refreshToken", refreshToken, (SameSite = "None"), options);
-    return res.json({ curUser });
+    res.json({ curUser });
   } catch (error) {
-    next(error);
+    res.status(500).json({ msg: "Something went wrong" });
   }
 }
 
@@ -157,42 +153,46 @@ async function handleUserLogout(req, res, next) {
   try {
     res.clearCookie("accessToken", (SameSite = "None"));
     res.clearCookie("refreshToken", (SameSite = "None"));
-    return res.json({ msg: "logout successful" });
+    res.json({ msg: "logout successful" });
   } catch (error) {
-    next(error);
+    res.status(500).json({ msg: "Something went wrong" });
   }
 }
 
 async function refreshAccessToken(req, res) {
-  const incomingRefreshToken = req.cookies?.refreshToken;
-  if (!incomingRefreshToken) {
-    return res.status(403).json({ msg: "You are not loggedIn" });
+  try {
+    const incomingRefreshToken = req.cookies?.refreshToken;
+    if (!incomingRefreshToken) {
+      return res.status(403).json({ msg: "You are not loggedIn" });
+    }
+
+    const userId = getUser(incomingRefreshToken)._id;
+    const curUser = await user.findById(userId);
+
+    if (!curUser) {
+      return res.status(400).json({ msg: "You was logged out! Login Again" });
+    }
+
+    const accessToken = generateAccessToken(curUser);
+    const refreshToken = generateRefreshToken(curUser);
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    res
+      .cookie("accessToken", accessToken, (SameSite = "None"), options)
+      .cookie("refreshToken", refreshToken, (SameSite = "None"), options);
+    res.json({ msg: "successful" });
+  } catch (error) {
+    res.status(500).json({ msg: "Something went wrong" });
   }
-
-  const userId = getUser(incomingRefreshToken)._id;
-  const curUser = await user.findById(userId);
-
-  if (!curUser) {
-    return res.status(400).json({ msg: "You was logged out! Login Again" });
-  }
-
-  const accessToken = generateAccessToken(curUser);
-  const refreshToken = generateRefreshToken(curUser);
-
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
-
-  res
-    .cookie("accessToken", accessToken, (SameSite = "None"), options)
-    .cookie("refreshToken", refreshToken, (SameSite = "None"), options);
-  return res.json({ msg: "successful" });
 }
 
 async function handleForgotPassword(req, res) {
-  const { email } = req.body;
   try {
+    const { email } = req.body;
     if (!email) {
       return res.status(403).json({ msg: "Please fill your email" });
     }
@@ -243,16 +243,16 @@ async function handleForgotPassword(req, res) {
 }
 
 async function handleResetPassword(req, res) {
-  const { password } = req.body;
-  if (!password) {
-    return res.status(403).json({ msg: "Please fill password" });
-  }
-  const resetToken1 = req.cookies?.resetToken;
-  if (!resetToken1) {
-    return res.status(400).send({ message: "Reset token missing" });
-  }
-
   try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(403).json({ msg: "Please fill password" });
+    }
+    const resetToken1 = req.cookies?.resetToken;
+    if (!resetToken1) {
+      return res.status(400).send({ message: "Reset token missing" });
+    }
+
     const decoded = jwt.verify(resetToken1, process.env.JWT_SECRET);
 
     const user1 = await user.findById(decoded.id);
@@ -261,7 +261,6 @@ async function handleResetPassword(req, res) {
     }
 
     user1.password = password;
-
     user1.resetToken = null;
     await user1.save();
     res.clearCookie("resetToken");
@@ -270,17 +269,20 @@ async function handleResetPassword(req, res) {
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res.status(400).send({ message: "Token expired" });
+    } else {
+      res
+        .status(500)
+        .send({ message: "Error resetting password", error: error.message });
     }
-    console.log("oh");
-    res
-      .status(500)
-      .send({ message: "Error resetting password", error: error.message });
   }
 }
 
 async function handleChangePassword(req, res, next) {
   try {
     const { oldPassword, newPassword, confirmPassword } = req.body;
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res.status(403).json({ msg: "Please fill your Credentials" });
+    }
     const _id = req.user._id;
     const curUser = await user.findOne({ _id });
     if (!curUser) {
@@ -299,9 +301,9 @@ async function handleChangePassword(req, res, next) {
 
     curUser.password = newPassword;
     await curUser.save();
-    return res.json({ msg: "Password changed successfully!" });
+    res.json({ msg: "Password changed successfully!" });
   } catch (error) {
-    res.status(500).send({ message: "Error resetting password", error });
+    res.status(500).send({ msg: "Something went wrong" });
   }
 }
 
