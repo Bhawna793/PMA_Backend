@@ -50,6 +50,10 @@ const ProductSchema = mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  discountedPrice:{
+    type:Number,
+    default:0
   }
 });
 

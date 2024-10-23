@@ -80,6 +80,7 @@ async function uploadProducts(req, res) {
       discount: req.body.discount,
       createdBy: currUser.curUser._id,
       seller: currUser.curUser.name,
+      discountedPrice:(req.body.price-((req.body.price*req.body.discount)/100))
     });
 
     await product.save();
@@ -93,12 +94,64 @@ async function uploadProducts(req, res) {
 
 async function getProduct(req, res) {
   try {
-    const product = await products.find({ isActive: true });
-    res.json(product);
+    const {
+      category,
+      subcategory,
+      seller,
+      priceRange,
+      discountRange,
+      sortBy,
+      order,
+      page = 1,
+      limit = 10,
+      searchTerm,
+    } = req.query;
+
+    const filter = { isActive: true };
+
+    if (category) filter.category = category;
+    if (subcategory) filter.subcategory = subcategory;
+    if (seller) filter.seller = seller;
+
+    if (priceRange) {
+      if (priceRange.includes("-")) {
+        const [minPrice, maxPrice] = priceRange.split("-").map(Number);
+        filter. discountedPrice = { $gte: minPrice, ...(maxPrice && { $lte: maxPrice }) };
+      } else if (priceRange.includes("and above")) {
+        const minPrice = parseInt(priceRange.split(" ")[0], 10);
+        filter.discountedPrice = { $gte: minPrice };
+      }
+    }
+
+    if (discountRange) {
+      const [minDiscount, maxDiscount] = discountRange.split("-").map(Number);
+      filter.discount = { $gte: minDiscount, $lte: maxDiscount };
+    }
+
+    if (searchTerm) {
+      filter.$or = [
+        { name: { $regex: searchTerm, $options: "i" } },
+        { description: { $regex: searchTerm, $options: "i" } },
+        { seller: { $regex: searchTerm, $options: "i" } },
+        { category: { $regex: searchTerm, $options: "i" } },
+        { subcategory: { $regex: searchTerm, $options: "i" } },
+      ];
+    }
+
+    const sortOptions = {};
+    if (sortBy && order) sortOptions[sortBy] = order === "asc" ? 1 : -1;
+
+    const Allproducts = await products
+      .find(filter)
+      .sort(sortOptions)
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const totalProducts = await products.countDocuments(filter);
+
+    return res.json({ Allproducts, totalProducts });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "An error occurred while fetching products" });
+    res.status(500).json({ msg: "Server Error" });
   }
 }
 
