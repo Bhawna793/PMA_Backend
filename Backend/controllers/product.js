@@ -105,7 +105,7 @@ async function getProduct(req, res) {
 async function getProductsByUser(req, res) {
   try {
     const userId = req.user._id;
-    const product = await products.find({ createdBy: userId, isActive: true });
+    const product = await products.find({ createdBy: userId });
     res.json(product);
   } catch (error) {
     res
@@ -134,13 +134,16 @@ async function deleteProduct(req, res) {
     if (!curProduct) {
       return res.status(404).json({ msg: "Product not found" });
     }
-    const newProductName = curProduct.name + " " + Date.now();
+    if (!curProduct.isActive) {
+      curProduct.isActive = true;
+      curProduct.save();
+      return res.status(200).json({ msg: "Product activated successfully" });
+    }
     curProduct.isActive = false;
-    curProduct.name = newProductName;
     curProduct.save();
-    res.status(200).json({ msg: "Product deleted successfully" });
+    res.status(200).json({ msg: "Product deactivated successfully" });
   } catch (error) {
-    res.status(500).json({ msg: "Error deleting Product" });
+    res.status(500).json({ msg: "Error in performing action" });
   }
 }
 
