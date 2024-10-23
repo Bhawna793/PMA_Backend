@@ -105,8 +105,44 @@ async function getProduct(req, res) {
 async function getProductsByUser(req, res) {
   try {
     const userId = req.user._id;
-    const product = await products.find({ createdBy: userId });
-    res.json(product);
+    console.log(req.query);
+    const pageNumber = +req.query.pageNumber;
+    const pageSize = +req.query.pageSize;
+    const sortBy = req.query.sortBy;
+    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+    const searchInput = req.query.searchInput;
+
+    const searchFilter = searchInput
+      ? {
+          $or: [
+            { category: { $regex: searchInput, $options: "i" } },
+            { subcategory: { $regex: searchInput, $options: "i" } },
+            { name: { $regex: searchInput, $options: "i" } },
+            { seller: { $regex: searchInput, $options: "i" } },
+            { description: { $regex: searchInput, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const filter = { createdBy: userId, ...searchFilter };
+    if (req.query.categoryName) filter.category = req.query.categoryName;
+    if (req.query.subCategoryName)
+      filter.subcategory = req.query.subCategoryName;
+    if (req.query.isActive) filter.isActive = req.query.isActive;
+
+    const totalProducts = await products
+      .find(filter)
+      .sort({ [sortBy]: sortOrder });
+
+    const count = totalProducts.length;
+
+    const product = await products
+      .find(filter)
+      .sort({ [sortBy]: sortOrder })
+      .skip(pageSize * (pageNumber - 1))
+      .limit(pageSize);
+
+    res.json({ count, product });
   } catch (error) {
     res
       .status(500)
