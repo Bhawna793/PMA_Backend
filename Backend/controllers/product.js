@@ -105,7 +105,6 @@ async function getProduct(req, res) {
 async function getProductsByUser(req, res) {
   try {
     const userId = req.user._id;
-    console.log(req.query);
     const pageNumber = +req.query.pageNumber;
     const pageSize = +req.query.pageSize;
     const sortBy = req.query.sortBy;
