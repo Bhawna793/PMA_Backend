@@ -38,9 +38,9 @@ router.get("/myProducts", checkAuth, getProductsByUser);
 
 router.get("/myProducts/:id", checkAuth, getProductById);
 
-router.delete("/myProducts/:id", checkAuth, deleteProduct);
+router.patch("/myProducts/:id", checkAuth, deleteProduct);
 
-router.patch(
+router.put(
   "/myProducts/:id",
   checkAuth,
   upload.fields([
