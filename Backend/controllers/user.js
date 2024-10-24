@@ -77,7 +77,7 @@ async function handleVerifyUser(email, token) {
       from: process.env.USER_MAIL,
       subject: "Verification Mail",
       html: `<h2>Email Verification</h2><p>Please verify your email by clicking the link below:</p>
-          <a href="http://localhost:4200/verify-email?token=${token}">Verify Email</a>`,
+          <a href="http://localhost:4200/auth/verify-email?token=${token}">Verify Email</a>`,
     };
 
     await transporter.sendMail(mailOptions);
@@ -225,7 +225,7 @@ async function handleForgotPassword(req, res) {
       to: user1.email,
       from: process.env.USER_MAIL,
       subject: "Password Reset",
-      html: `<p>You requested a password reset. Click <a href="http://localhost:4200/resetPassword">here</a> to reset your password.</p>`,
+      html: `<p>You requested a password reset. Click <a href="http://localhost:4200/auth/resetPassword">here</a> to reset your password.</p>`,
     };
 
     await transporter.sendMail(mailOptions);

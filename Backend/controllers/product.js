@@ -80,7 +80,8 @@ async function uploadProducts(req, res) {
       discount: req.body.discount,
       createdBy: currUser.curUser._id,
       seller: currUser.curUser.name,
-      discountedPrice:(req.body.price-((req.body.price*req.body.discount)/100))
+      discountedPrice:
+       Math.floor( req.body.price - (req.body.price * req.body.discount) / 100,)
     });
 
     await product.save();
@@ -116,7 +117,10 @@ async function getProduct(req, res) {
     if (priceRange) {
       if (priceRange.includes("-")) {
         const [minPrice, maxPrice] = priceRange.split("-").map(Number);
-        filter. discountedPrice = { $gte: minPrice, ...(maxPrice && { $lte: maxPrice }) };
+        filter.discountedPrice = {
+          $gte: minPrice,
+          ...(maxPrice && { $lte: maxPrice }),
+        };
       } else if (priceRange.includes("and above")) {
         const minPrice = parseInt(priceRange.split(" ")[0], 10);
         filter.discountedPrice = { $gte: minPrice };
@@ -244,8 +248,15 @@ async function updateProduct(req, res) {
 
     const id = req.params.id;
 
+    const originalProduct = await products.findById({ _id: id });
+    if (!originalProduct) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
+    const myImages = [...originalProduct.images, ...Object.values(imagePaths)];
+
     const updatedProduct = await products.findByIdAndUpdate(
-      { _id: id },
+      id,
       {
         category: req.body.category,
         subcategory: req.body.subcategory,
@@ -254,16 +265,10 @@ async function updateProduct(req, res) {
         discount: req.body.discount,
         quantity: req.body.Quantity,
         description: req.body.description,
-        images: imagePaths,
+        images: myImages,
       },
-      {
-        new: true,
-      }
+      { new: true }
     );
-    if (!updatedProduct) {
-      return res.status(404).json({ msg: "Product not found" });
-    }
-
     res
       .status(200)
       .json({ msg: "Product updated successfully", updatedProduct });
