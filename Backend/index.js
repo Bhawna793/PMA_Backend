@@ -1,101 +1,101 @@
-require('dotenv').config()
+require("dotenv").config();
+const JWT_SECRET = process.env.JWT_SECRET;
+const jwt = require("jsonwebtoken");
 
-const express = require('express');
+const express = require("express");
 const app = express();
 const PORT = 8000;
-const cors = require('cors');
-const nodemailer=require('nodemailer')
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
-const mongoose=require('mongoose');
-const user=require('./models/user');
-const Category=require('./models/categories')
-const products=require('./models/products');
-const UserRoute=require('./routes/user')
-const ProductRoute=require('./routes/product');
-const jwt=require('jsonwebtoken');
-var bcrypt = require('bcryptjs');
-const path=require('path')
-const categoriesController=require('./routes/category');
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const mongoose = require("mongoose");
+const user = require("./models/user");
+const Category = require("./models/categories");
+const products = require("./models/products");
+const UserRoute = require("./routes/user");
+const ProductRoute = require("./routes/product");
+var bcrypt = require("bcryptjs");
+const path = require("path");
+const categoriesController = require("./routes/category");
 
-
-
-app.use(cors({
-    origin: "http://localhost:4200",
+app.use(
+  cors({
+    origin: process.env.myURL,
     credentials: true,
-}));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+  })
+);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 async function addSubcategoryToCategory(categoryName, subcategoryName) {
-    try {
-        let category = await Category.findOne({ name: categoryName });
+  try {
+    let category = await Category.findOne({ name: categoryName });
 
-        if (!category) {
-            category = new Category({ name: categoryName, subcategories: [subcategoryName] });
-            await category.save();
-            console.log('Category created with subcategory:', categoryName, subcategoryName);
-        } else {
-            if (!category.subcategories.includes(subcategoryName)) {
-                category.subcategories.push(subcategoryName);
-                await category.save();
-            } 
-        }
-    } catch (error) {
-        console.error('Error adding subcategory:', error);
+    if (!category) {
+      category = new Category({
+        name: categoryName,
+        subcategories: [subcategoryName],
+      });
+      await category.save();
+      console.log(
+        "Category created with subcategory:",
+        categoryName,
+        subcategoryName
+      );
+    } else {
+      if (!category.subcategories.includes(subcategoryName)) {
+        category.subcategories.push(subcategoryName);
+        await category.save();
+      }
     }
+  } catch (error) {
+    console.error("Error adding subcategory:", error);
+  }
 }
 
-async function add_data(){
-   await addSubcategoryToCategory('Electronics','Mobile');
-   await addSubcategoryToCategory('Electronics','Laptop');
-   await addSubcategoryToCategory('Electronics','Tablets');
-   await addSubcategoryToCategory('Electronics','Smart Watch');
+async function add_data() {
+  await addSubcategoryToCategory("Electronics", "Mobile");
+  await addSubcategoryToCategory("Electronics", "Laptop");
+  await addSubcategoryToCategory("Electronics", "Tablets");
+  await addSubcategoryToCategory("Electronics", "Smart Watch");
 
+  await addSubcategoryToCategory("Books", "Fiction");
+  await addSubcategoryToCategory("Books", "Non-Fiction");
+  await addSubcategoryToCategory("Books", "Kids Supplies");
+  await addSubcategoryToCategory("Books", "Office Supplies");
 
-   await addSubcategoryToCategory('Books','Fiction');
-   await addSubcategoryToCategory('Books','Non-Fiction');
-   await addSubcategoryToCategory('Books','Kids Supplies');
-   await addSubcategoryToCategory('Books','Office Supplies');
+  await addSubcategoryToCategory("Foods", "Snacks");
+  await addSubcategoryToCategory("Foods", "Beverages");
+  await addSubcategoryToCategory("Foods", "Fresh Produce");
+  await addSubcategoryToCategory("Foods", "Canned Foods");
 
+  await addSubcategoryToCategory("Beauty and Health", "Skincare");
+  await addSubcategoryToCategory("Beauty and Health", "Haircare");
+  await addSubcategoryToCategory("Beauty and Health", "Makeup");
+  await addSubcategoryToCategory("Beauty and Health", "Health Supplements");
 
-   await addSubcategoryToCategory('Foods','Snacks');
-   await addSubcategoryToCategory('Foods','Beverages');
-   await addSubcategoryToCategory('Foods','Fresh Produce');
-   await addSubcategoryToCategory('Foods','Canned Foods');
+  await addSubcategoryToCategory("Home and Living", "Furniture");
+  await addSubcategoryToCategory("Home and Living", "KitchenWare");
+  await addSubcategoryToCategory("Home and Living", "Home Decor");
+  await addSubcategoryToCategory("Home and Living", "Beddings");
 
-   await addSubcategoryToCategory('Beauty and Health','Skincare');
-   await addSubcategoryToCategory('Beauty and Health','Haircare');
-   await addSubcategoryToCategory('Beauty and Health','Makeup');
-   await addSubcategoryToCategory('Beauty and Health','Health Supplements');
-
-   await addSubcategoryToCategory('Home and Living','Furniture');
-   await addSubcategoryToCategory('Home and Living','KitchenWare');
-   await addSubcategoryToCategory('Home and Living','Home Decor');
-   await addSubcategoryToCategory('Home and Living','Beddings');
-
-   await addSubcategoryToCategory('Fashion','Mens Wear');
-   await addSubcategoryToCategory('Fashion','Womens Wear');
-   await addSubcategoryToCategory('Fashion','Kids Wear');
-
-
+  await addSubcategoryToCategory("Fashion", "Mens Wear");
+  await addSubcategoryToCategory("Fashion", "Womens Wear");
+  await addSubcategoryToCategory("Fashion", "Kids Wear");
 }
 
 add_data();
 
+app.use("/user", UserRoute);
+app.use("/api", ProductRoute);
+app.get("/categories", categoriesController.getCategories);
+mongoose.connect("mongodb://127.0.0.1:27017/PMA").then(() => {
+  console.log("DB Connected");
+});
 
-
-
-app.use('/user',UserRoute);
-app.use('/api',ProductRoute);
-app.get('/categories',categoriesController.getCategories);
-mongoose.connect("mongodb://127.0.0.1:27017/PMA").then(()=>{
-    console.log("DB Connected");
-})
-  
-app.listen(PORT, ()=> {
-    console.log(`server started at ${PORT}`);
-})
+app.listen(PORT, () => {
+  console.log(`server started at ${PORT}`);
+});
