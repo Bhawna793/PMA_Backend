@@ -209,6 +209,9 @@ async function getProductById(req, res) {
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });
     }
+    if (product.createdBy._id != req.user._id) {
+      return res.status(403).json({ msg: "You are not authorized." });
+    }
     res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ msg: "Something went wrong" });
@@ -221,6 +224,9 @@ async function deleteProduct(req, res) {
     const curProduct = await products.findOne({ _id });
     if (!curProduct) {
       return res.status(404).json({ msg: "Product not found" });
+    }
+    if (curProduct.createdBy._id != req.user._id) {
+      return res.status(403).json({ msg: "You are not authorized." });
     }
     if (!curProduct.isActive) {
       curProduct.isActive = true;
@@ -247,6 +253,9 @@ async function updateProduct(req, res) {
     const originalProduct = await products.findById({ _id: id });
     if (!originalProduct) {
       return res.status(404).json({ msg: "Product not found" });
+    }
+    if (originalProduct.createdBy._id != req.user._id) {
+      return res.status(403).json({ msg: "You are not authorized." });
     }
     let coverImagePath = originalProduct.coverImage;
     if (req.files.coverImage) {
