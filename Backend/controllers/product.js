@@ -1,6 +1,4 @@
 const products = require("../models/products");
-const multer = require("multer");
-const path = require("path");
 const { getUser } = require("../service/auth");
 
 function checkValidation(req) {
@@ -45,20 +43,17 @@ async function uploadProducts(req, res) {
       !req.body.discount ||
       !req.body.Quantity
     ) {
-      return res.status(403).json({ msg: "Please fill your Credentials" });
+      return res.status(400).json({ msg: "Please fill your Credentials" });
     }
 
     checkValidation(req);
     const existingProduct = await products.findOne({ name: req.body.name });
     if (existingProduct) {
-      return res.status(400).json({ msg: "Product already exists" });
+      return res.status(409).json({ msg: "Product already exists" });
     }
 
     const currUser = getUser(req.cookies.accessToken);
 
-    if (!req.files.coverImage || req.files.coverImage.length === 0) {
-      return res.status(400).json({ msg: "Cover image is required." });
-    }
     if (!req.files.coverImage || req.files.coverImage.length === 0) {
       return res.status(400).json({ msg: "Cover image is required." });
     }
@@ -80,8 +75,9 @@ async function uploadProducts(req, res) {
       discount: req.body.discount,
       createdBy: currUser.curUser._id,
       seller: currUser.curUser.name,
-      discountedPrice:
-       Math.floor( req.body.price - (req.body.price * req.body.discount) / 100,)
+      discountedPrice: Math.floor(
+        req.body.price - (req.body.price * req.body.discount) / 100
+      ),
     });
 
     await product.save();
@@ -213,7 +209,7 @@ async function getProductById(req, res) {
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });
     }
-    res.status(200).json(product);
+    res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ msg: "Something went wrong" });
   }
@@ -252,6 +248,10 @@ async function updateProduct(req, res) {
     if (!originalProduct) {
       return res.status(404).json({ msg: "Product not found" });
     }
+    let coverImagePath = originalProduct.coverImage;
+    if (req.files.coverImage) {
+      coverImagePath = req.files.coverImage[0].path;
+    }
 
     const myImages = [...originalProduct.images, ...Object.values(imagePaths)];
 
@@ -265,6 +265,7 @@ async function updateProduct(req, res) {
         discount: req.body.discount,
         quantity: req.body.Quantity,
         description: req.body.description,
+        coverImage: coverImagePath,
         images: myImages,
       },
       { new: true }

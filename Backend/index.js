@@ -1,6 +1,4 @@
 require("dotenv").config();
-const JWT_SECRET = process.env.JWT_SECRET;
-const jwt = require("jsonwebtoken");
 
 const express = require("express");
 const app = express();
@@ -9,12 +7,9 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
-const user = require("./models/user");
 const Category = require("./models/categories");
-const products = require("./models/products");
 const UserRoute = require("./routes/user");
 const ProductRoute = require("./routes/product");
-var bcrypt = require("bcryptjs");
 const path = require("path");
 const categoriesController = require("./routes/category");
 

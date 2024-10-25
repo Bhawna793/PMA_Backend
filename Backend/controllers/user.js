@@ -14,7 +14,7 @@ async function handleUserSignUp(req, res) {
   try {
     const { name, email, mobile, password } = req.body;
     if (!email || !name || !mobile || !password) {
-      return res.status(403).json({ msg: "Please fill your credentials" });
+      return res.status(400).json({ msg: "Please fill your credentials" });
     }
 
     const passwordValidationRegex =
@@ -44,7 +44,7 @@ async function handleUserSignUp(req, res) {
       $or: [{ email }, { mobile }],
     });
     if (existingUser) {
-      return res.status(400).json({ msg: "User already exists" });
+      return res.status(409).json({ msg: "User already exists" });
     }
 
     const newUser = await user.create({
@@ -82,7 +82,7 @@ async function handleVerifyUser(email, token) {
 
     await transporter.sendMail(mailOptions);
   } catch (err) {
-    res.status(401).json({ msg: "Email not sent" });
+    res.status(500).json({ msg: "Email not sent" });
   }
 }
 
@@ -104,7 +104,7 @@ async function verify_user(req, res) {
 
     res.status(200).json({ message: "Email verified successfully" });
   } catch (error) {
-    res.status(400).json({ message: "Token verification failed", error });
+    res.status(500).json({ message: "Token verification failed", error });
   }
 }
 
@@ -113,12 +113,12 @@ async function handleUserLogin(req, res, next) {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(403).json({ msg: "Please fill your credentials" });
+      return res.status(400).json({ msg: "Please fill your credentials" });
     }
 
     const curUser = await user.findOne({ email });
     if (!curUser) {
-      return res.status(404).json({ msg: "Invalid Email" });
+      return res.status(404).json({ msg: "Email not found" });
     }
 
     if (curUser.isVerified == false) {
@@ -162,14 +162,14 @@ async function refreshAccessToken(req, res) {
   try {
     const incomingRefreshToken = req.cookies?.refreshToken;
     if (!incomingRefreshToken) {
-      return res.status(403).json({ msg: "You are not loggedIn" });
+      return res.status(401).json({ msg: "You are not loggedIn" });
     }
 
     const userId = getUser(incomingRefreshToken)._id;
     const curUser = await user.findById(userId);
 
     if (!curUser) {
-      return res.status(400).json({ msg: "You was logged out! Login Again" });
+      return res.status(401).json({ msg: "You was logged out! Login Again" });
     }
 
     const accessToken = generateAccessToken(curUser);
@@ -193,7 +193,7 @@ async function handleForgotPassword(req, res) {
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(403).json({ msg: "Please fill your email" });
+      return res.status(400).json({ msg: "Please fill your email" });
     }
     const user1 = await user.findOne({ email });
     if (!user1) {
@@ -241,7 +241,7 @@ async function handleResetPassword(req, res) {
   try {
     const { password } = req.body;
     if (!password) {
-      return res.status(403).json({ msg: "Please fill password" });
+      return res.status(400).json({ msg: "Please fill password" });
     }
     const resetToken1 = req.cookies?.resetToken;
     if (!resetToken1) {
@@ -252,7 +252,7 @@ async function handleResetPassword(req, res) {
 
     const user1 = await user.findById(decoded.id);
     if (!user1 || user1.resetToken !== resetToken1) {
-      return res.status(400).send({ message: "Invalid or expired token" });
+      return res.status(401).send({ message: "Invalid or expired token" });
     }
 
     user1.password = password;
@@ -263,7 +263,7 @@ async function handleResetPassword(req, res) {
     res.send({ message: "Password reset successfully" });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      return res.status(400).send({ message: "Token expired" });
+      return res.status(401).send({ message: "Token expired" });
     } else {
       res
         .status(500)
@@ -276,18 +276,18 @@ async function handleChangePassword(req, res, next) {
   try {
     const { oldPassword, newPassword, confirmPassword } = req.body;
     if (!oldPassword || !newPassword || !confirmPassword) {
-      return res.status(403).json({ msg: "Please fill your Credentials" });
+      return res.status(400).json({ msg: "Please fill your Credentials" });
     }
     const _id = req.user._id;
     const curUser = await user.findOne({ _id });
     if (!curUser) {
-      return res.status(400).json({ msg: "You are not Authorized" });
+      return res.status(401).json({ msg: "You are not Authorized" });
     }
 
     const result = await bcrypt.compare(oldPassword, curUser.password);
 
     if (!result) {
-      return res.status(400).json({ msg: "Old Password is wrong!" });
+      return res.status(401).json({ msg: "Old Password is wrong!" });
     }
 
     if (newPassword !== confirmPassword) {
