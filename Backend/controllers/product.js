@@ -100,7 +100,7 @@ async function getProduct(req, res) {
       sortBy,
       order,
       page = 1,
-      limit = 10,
+      limit = 6,
       searchTerm,
     } = req.query;
 
